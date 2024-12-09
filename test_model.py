@@ -5,7 +5,26 @@ import pandas as pd
 import pickle
 import base64
 
-# Function to extract text from PDF
+patterns = {
+        "Gender (0-M;1-F)": r"Gender.*:\s*(0|1)",
+        "Blood Pressure (systolic)": r"Blood Pressure\s+([\d.]+)[/]",
+        "Blood Pressure (diastolic)": r"Blood Pressure\s+[\d.]+/([\d.]+)", 
+        "Heart Rate (bpm)": r"Heart Rate\s+([\d.]+)", 
+        "Hemoglobin A1c (%)": r"Hemoglobin A1c\s+([\d.]+)",
+        "Breathing Rate (brpm)": r"Breathing Rate\s+([\d.]+)",
+        "Oxygen Saturation (%)": r"Oxygen Saturation\s+([\d.]+)", 
+        "HRV SDNN (ms)": r"HRV SDNN\s+([\d.]+)",
+        "RMSSD (ms)": r"RMSSD\s+([\d.]+)",
+        "Recovery Ability": r"Recovery Ability.*:\s*(\d+)",
+        "Mean RRI (ms)": r"Mean RRI\s+([\d.]+)",
+        "Hemoglobin (g/dl)": r"Hemoglobin\s+([\d.]+)", 
+        "Stress Index": r"Stress Index\s+([\d.]+)",
+        "SNS Index": r"SNS Index\s+([-\d.]+)",
+        "PNS Index": r"PNS Index\s+([-\d.]+)", 
+        "SD1 (ms)": r"SD1\s+([\d.]+)",  
+        "SD2 (ms)": r"SD2\s+([\d.]+)",
+    }
+
 def extract_text_from_pdf(file):
     with pdfplumber.open(file) as pdf:
         text = ""
@@ -15,39 +34,31 @@ def extract_text_from_pdf(file):
 
 # Function to parse extracted text based on provided format
 def parse_extracted_text(text):
-    patterns = {
-        #"Gender (0-M;1-F)": r"Gender:\s*(0|1)",  # Gender (0-M;1-F)
-        "Blood Pressure (systolic)": r"Blood Pressure \(systolic\):\s*(\d+)",
-        "Blood Pressure (diastolic)": r"Blood Pressure \(diastolic\):\s*(\d+)",
-        "Heart Rate (bpm)": r"Heart Rate \(bpm\):\s*(\d+)",
-        "Hemoglobin A1c (%)": r"Hemoglobin A1c \(%\):\s*(\d+\.?\d*)",
-        "Breathing Rate (brpm)": r"Breathing Rate \(brpm\):\s*(\d+)",
-        "Oxygen Saturation (%)": r"Oxygen Saturation \(%\):\s*(\d+\.?\d*)",
-        "HRV SDNN (ms)": r"HRV SDNN \(ms\):\s*(\d+\.?\d*)",
-        "RMSSD (ms)": r"RMSSD \(ms\):\s*(\d+\.?\d*)",
-        "Recovery Ability": r"Recovery Ability:\s*(\d+)",
-        "Stress Index": r"Stress Index:\s*(\d+\.?\d*)",
-        "SNS Index": r"SNS Index:\s*(\d+\.?\d*)",
-        "PNS Index": r"PNS Index:\s*(\d+\.?\d*)",
-        "Hemoglobin (g/dl)": r"Hemoglobin \(g/dl\):\s*(\d+\.?\d*)",
-        "Mean RRI (ms)": r"Mean RRI \(ms\):\s*(\d+\.?\d*)",
-        "SD1 (ms)": r"SD1 \(ms\):\s*(\d+\.?\d*)",
-        "SD2 (ms)": r"SD2 \(ms\):\s*(\d+\.?\d*)",
-    }
-
     parsed_data = {}
-    for key, pattern in patterns.items():
-        match = re.search(pattern, text, re.DOTALL)  # Support multi-line patterns
+    for feature, pattern in patterns.items():
+        match = re.search(pattern, text)  
         if match:
-            parsed_data[key] = float(match.group(1))
+            parsed_data[feature] = float(match.group(1))
         else:
-            parsed_data[key] = None  # Set to None if not found
-
+            parsed_data[feature] = None  # Set to None if not found
+ 
     return parsed_data
 
 # Function to prepare input data for the model
 def prepare_input(parsed_data):
+    
+    trained_columns = [
+        'Heart Rate (bpm)', 'Breathing Rate (brpm)', 'Oxygen Saturation (%)',
+        'Blood Pressure (systolic)', 'Blood Pressure (diastolic)', 'Stress Index',
+        'Recovery Ability', 'PNS Index', 'SNS Index', 'RMSSD (ms)', 'SD2 (ms)',
+        'Hemoglobin A1c (%)', 'Mean RRI (ms)', 'SD1 (ms)', 'HRV SDNN (ms)',
+        'Hemoglobin (g/dl)', 'Gender (0-M;1-F)'
+    ]
+    
     input_data = pd.DataFrame([parsed_data])
+    
+    input_data = input_data[trained_columns]
+    
     return input_data
 
 def show_pdf(file):
@@ -66,6 +77,20 @@ st.markdown(
 
 st.sidebar.title("Upload PDF")
 uploaded_file = st.sidebar.file_uploader("Drag & Drop PDF here", type=["pdf"])
+
+disease_labels = [
+    "Anaemia",
+    "Arrhythmias",
+    "Atherosclerosis",
+    "Autonomic Dysfunction",
+    "Cardiovascular Disease (CVD)",
+    "Chronic Fatigue Syndrome (CFS)",
+    "Diabetes",
+    "Healthy",
+    "Hypertension",
+    "Respiratory Disease (COPD or Asthma)",
+    "Stress-related Disorders"
+]
 
 if uploaded_file is not None:
     # Display the uploaded file name
@@ -98,9 +123,11 @@ if uploaded_file is not None:
         best_model = pickle.load(f)
 
     prediction = best_model.predict(input_data)
+    
+    predicted_disease = disease_labels[prediction[0]]
 
     # Display prediction result
     st.subheader("Model Prediction Result:")
-    st.write(f"**Predicted Disease:** {prediction[0]}")
+    st.write(f"**Predicted Disease:** {predicted_disease}")
 else:
     st.sidebar.info("Please upload a PDF file to get started.")
