@@ -9,23 +9,23 @@ import pickle
 import base64
 
 patterns = {
-        "Gender (0-M;1-F)": r"Gender.*?:\s*(0|1)",
-        "Blood Pressure (systolic)": r"Blood Pressure\s+(\d+\.\d+|\d+)\s*/",
-        "Blood Pressure (diastolic)": r"Blood Pressure\s+\d+\.\d+|\d+\s*/(\d+\.\d+|\d+)",
-        "Heart Rate (bpm)": r"Heart Rate\s*[:\-]?\s*(\d+\.?\d*)\s*(bpm|bpm)?", 
-        "Hemoglobin A1c (%)": r"Hemoglobin A1c\s*[:\-]?\s*(\d+\.?\d*)\s*(%)?",
-        "Breathing Rate (brpm)": r"Breathing Rate\s*[:\-]?\s*(\d+\.?\d*)\s*(brpm|brpm)?",
-        "Oxygen Saturation (%)": r"Oxygen Saturation\s*[:\-]?\s*(\d+\.?\d*)\s*(%)?",
-        "HRV SDNN (ms)": r"HRV SDNN\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
-        "RMSSD (ms)": r"RMSSD\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
-        "Recovery Ability": r"Recovery Ability\s*[:\-]?\s*(\d+)",
-        "Mean RRI (ms)": r"Mean RRI\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
-        "Hemoglobin (g/dl)": r"Hemoglobin\s*[:\-]?\s*(\d+\.?\d*)\s*(g/dl)?",
-        "Stress Index": r"Stress Index\s*[:\-]?\s*(\d+\.?\d*)",
-        "SNS Index": r"SNS Index\s*[:\-]?\s*(-?\d+\.?\d*)",
-        "PNS Index": r"PNS Index\s*[:\-]?\s*(-?\d+\.?\d*)",
-        "SD1 (ms)": r"SD1\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
-        "SD2 (ms)": r"SD2\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?"
+        "Gender (0-M;1-F)": r"Gender.*:\s*(0|1)",
+        "Blood Pressure (systolic)": r"Blood Pressure\s+([\d.]+)[/]",
+        "Blood Pressure (diastolic)": r"Blood Pressure\s+[\d.]+/([\d.]+)", 
+        "Heart Rate (bpm)": r"Heart Rate\s+([\d.]+)", 
+        "Hemoglobin A1c (%)": r"Hemoglobin A1c\s+([\d.]+)",
+        "Breathing Rate (brpm)": r"Breathing Rate\s+([\d.]+)",
+        "Oxygen Saturation (%)": r"Oxygen Saturation\s+([\d.]+)", 
+        "HRV SDNN (ms)": r"HRV SDNN\s+([\d.]+)",
+        "RMSSD (ms)": r"RMSSD\s+([\d.]+)",
+        "Recovery Ability": r"Recovery Ability.*:\s*(\d+)",
+        "Mean RRI (ms)": r"Mean RRI\s+([\d.]+)",
+        "Hemoglobin (g/dl)": r"Hemoglobin\s+([\d.]+)", 
+        "Stress Index": r"Stress Index\s+([\d.]+)",
+        "SNS Index": r"SNS Index\s+([-\d.]+)",
+        "PNS Index": r"PNS Index\s+([-\d.]+)", 
+        "SD1 (ms)": r"SD1\s+([\d.]+)",  
+        "SD2 (ms)": r"SD2\s+([\d.]+)",
     }
 
 def extract_text_from_pdf(file):
