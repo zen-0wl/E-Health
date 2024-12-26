@@ -2,4 +2,4 @@ streamlit
 pdfplumber
 pandas 
 pytesseract
-cv2
+opencv-python
