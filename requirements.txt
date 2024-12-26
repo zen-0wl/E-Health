@@ -1,12 +1,2 @@
 streamlit 
 pdfplumber
-pandas 
-pytesseract
-cv2
-numpy 
-PIL  
-Image
-pdf2image
-convert_from_bytes
-pickle
-base64
