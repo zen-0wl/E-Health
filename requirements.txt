@@ -2,10 +2,3 @@ streamlit
 pdfplumber
 pandas 
 pytesseract
-cv2
-numpy 
-PIL  
-pdf2image
-convert_from_bytes
-pickle
-base64
