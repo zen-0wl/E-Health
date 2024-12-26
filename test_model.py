@@ -5,7 +5,7 @@ import pandas as pd
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 import cv2
-import numpy as np
+import numpy as np 
 from PIL import Image
 from pdf2image import convert_from_bytes
 import pickle
