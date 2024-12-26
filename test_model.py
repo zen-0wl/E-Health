@@ -32,19 +32,25 @@ patterns = {
 
 def extract_text_from_pdf(file):
     text = ""
+    file_type = file.type.lower()
     
-    # First, try to extract text normally using pdfplumber
-    with pdfplumber.open(file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text
-            else:
-                # If text extraction fails, use OCR on the image
-                images = convert_from_bytes(file.getvalue())
-                for img in images:
-                    processed_text = extract_text_line_by_line(img)
-                    text += processed_text
+    # If the file is a PDF
+    if file_type == 'application/pdf':
+        with pdfplumber.open(file) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text
+                else:
+                    # Use OCR on the image if text extraction fails
+                    images = convert_from_bytes(file.getvalue())
+                    for img in images:
+                        processed_text = extract_text_line_by_line(img)
+                        text += processed_text
+
+    elif file_type in ['image/jpeg', 'image/png', 'image/jpg']:
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image)
     
     return text
 
@@ -124,8 +130,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.sidebar.title("Upload PDF")
-uploaded_file = st.sidebar.file_uploader("Drag & Drop PDF here", type=["pdf"])
+st.sidebar.title("Upload File")
+uploaded_file = st.sidebar.file_uploader("Drag & Drop PDF or Image here", type=["pdf", "jpg", "jpeg", "png"])
 
 disease_labels = [
     "Anaemia",
@@ -153,7 +159,10 @@ if uploaded_file is not None:
 
     with col1:
         st.subheader("Original Source Data:")
-        show_pdf(uploaded_file)
+        if uploaded_file.type == 'application/pdf':
+            show_pdf(uploaded_file)
+        else:
+            st.image(uploaded_file)
 
     with col2:
         extracted_text = extract_text_from_pdf(uploaded_file)

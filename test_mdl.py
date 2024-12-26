@@ -3,47 +3,87 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import pytesseract
+import cv2
+import numpy as np
 from PIL import Image
 from pdf2image import convert_from_bytes
 import pickle
 import base64
 
 patterns = {
-        "Gender (0-M;1-F)": r"Gender.*:\s*(0|1)",
-        "Blood Pressure (systolic)": r"Blood Pressure\s+([\d.]+)[/]",
-        "Blood Pressure (diastolic)": r"Blood Pressure\s+[\d.]+/([\d.]+)", 
-        "Heart Rate (bpm)": r"Heart Rate\s+([\d.]+)", 
-        "Hemoglobin A1c (%)": r"Hemoglobin A1c\s+([\d.]+)",
-        "Breathing Rate (brpm)": r"Breathing Rate\s+([\d.]+)",
-        "Oxygen Saturation (%)": r"Oxygen Saturation\s+([\d.]+)", 
-        "HRV SDNN (ms)": r"HRV SDNN\s+([\d.]+)",
-        "RMSSD (ms)": r"RMSSD\s+([\d.]+)",
-        "Recovery Ability": r"Recovery Ability.*:\s*(\d+)",
-        "Mean RRI (ms)": r"Mean RRI\s+([\d.]+)",
-        "Hemoglobin (g/dl)": r"Hemoglobin\s+([\d.]+)", 
-        "Stress Index": r"Stress Index\s+([\d.]+)",
-        "SNS Index": r"SNS Index\s+([-\d.]+)",
-        "PNS Index": r"PNS Index\s+([-\d.]+)", 
-        "SD1 (ms)": r"SD1\s+([\d.]+)",  
-        "SD2 (ms)": r"SD2\s+([\d.]+)",
+        "Gender (0-M;1-F)": r"Gender.*?:\s*(0|1)",
+        "Blood Pressure (systolic)": r"Blood Pressure\s+(\d+\.\d+|\d+)/(\d+\.\d+|\d+)",
+        "Blood Pressure (diastolic)": r"Blood Pressure\s+\d+\.\d+/(\d+\.\d+|\d+)",
+        "Heart Rate (bpm)": r"Heart Rate\s*[:\-]?\s*(\d+\.?\d*)\s*(bpm|bpm)?", 
+        "Hemoglobin A1c (%)": r"Hemoglobin Alc\s+(\d+\.\d+|\d+)\s*%",
+        "Breathing Rate (brpm)": r"Breathing Rate\s*[:\-]?\s*(\d+\.?\d*)\s*(brpm|brpm)?",
+        "Oxygen Saturation (%)": r"Oxygen Saturation\s+(\d+\.\d+|\d+)\s*%",
+        "HRV SDNN (ms)": r"HRV SDO?NN\s+(\d+\.\d+|\d+)\s*ms",
+        "RMSSD (ms)": r"RMSSD\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
+        "Recovery Ability": r"Recovery Ability\s*[:\-]?\s*(\d+)",
+        "Mean RRI (ms)": r"Mean RRI\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
+        "Hemoglobin (g/dl)": r"Hemoglobin\s+(\d+\.\d+|\d+)\s*g/dl",
+        "Stress Index": r"Stress Index\s*[:\-]?\s*(\d+\.?\d*)",
+        "SNS Index": r"SNS Index\s*[:\-]?\s*(-?\d+\.?\d*)",
+        "PNS Index": r"PNS Index\s*[:\-]?\s*(-?\d+\.?\d*)",
+        "SD1 (ms)": r"SD1\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?",
+        "SD2 (ms)": r"SD2\s*[:\-]?\s*(\d+\.?\d*)\s*(ms)?"
     }
 
 def extract_text_from_pdf(file):
     text = ""
+    file_type = file.type.lower()
     
-    # First, try to extract text normally using pdfplumber
-    with pdfplumber.open(file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text
-            else:
-                # If text extraction fails, use OCR on the image
-                images = convert_from_bytes(file.getvalue())
-                for img in images:
-                    text += pytesseract.image_to_string(img)
+    # If the file is a PDF
+    if file_type == 'application/pdf':
+        with pdfplumber.open(file) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text
+                else:
+                    # Use OCR on the image if text extraction fails
+                    images = convert_from_bytes(file.getvalue())
+                    for img in images:
+                        processed_text = extract_text_line_by_line(img)
+                        text += processed_text
+
+    elif file_type in ['image/jpeg', 'image/png', 'image/jpg']:
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image)
     
     return text
+
+def extract_text_line_by_line(image):
+    # Convert PIL Image to OpenCV format
+    image = np.array(image)
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    # Apply thresholding to binarize the image (improves OCR accuracy)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+
+    # Detect horizontal lines (text lines) using contours
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (image.shape[1], 1))
+    dilated = cv2.dilate(thresh, kernel, iterations=1)
+    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Sort contours top-to-bottom by the y-coordinate
+    contours = sorted(contours, key=lambda ctr: cv2.boundingRect(ctr)[1])
+
+    extracted_text = ""
+
+    for contour in contours:
+        # Get bounding box for each line
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Extract the region of interest (line of text)
+        line_img = image[y:y + h, x:x + w]
+
+        # OCR on the line image
+        line_text = pytesseract.image_to_string(line_img, config='--psm 7')
+        extracted_text += line_text + "\n"
+
+    return extracted_text
 
 # Function to parse extracted text based on provided format
 def parse_extracted_text(text):
@@ -51,12 +91,14 @@ def parse_extracted_text(text):
     for feature, pattern in patterns.items():
         match = re.search(pattern, text)  
         if match:
-            parsed_data[feature] = float(match.group(1))
+            try:
+                parsed_data[feature] = float(match.group(1))
+            except (ValueError, TypeError):
+                parsed_data[feature] = None  # Handle any conversion errors gracefully
         else:
-            parsed_data[feature] = None  
- 
-    return parsed_data
+            parsed_data[feature] = None  # Set to None if no match is found
 
+    return parsed_data
 
 def prepare_input(parsed_data):
     
@@ -88,8 +130,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.sidebar.title("Upload PDF")
-uploaded_file = st.sidebar.file_uploader("Drag & Drop PDF here", type=["pdf"])
+st.sidebar.title("Upload File")
+uploaded_file = st.sidebar.file_uploader("Drag & Drop PDF or Image here", type=["pdf", "jpg", "jpeg", "png"])
 
 disease_labels = [
     "Anaemia",
@@ -117,7 +159,10 @@ if uploaded_file is not None:
 
     with col1:
         st.subheader("Original Source Data:")
-        show_pdf(uploaded_file)
+        if uploaded_file.type == 'application/pdf':
+            show_pdf(uploaded_file)
+        else:
+            st.image(uploaded_file)
 
     with col2:
         extracted_text = extract_text_from_pdf(uploaded_file)
@@ -126,8 +171,12 @@ if uploaded_file is not None:
 
     # Parsing and model prediction
     parsed_data = parse_extracted_text(extracted_text)
+    parsed_df = pd.DataFrame(list(parsed_data.items()), columns=["Disease", "Result"])
+    parsed_df.index = [''] * len(parsed_df) # removes the side numberings
+    
     st.subheader("Parsed Data:")
-    st.json(parsed_data)
+    #st.json(parsed_data)
+    st.dataframe(parsed_df)
 
     input_data = prepare_input(parsed_data)
 
