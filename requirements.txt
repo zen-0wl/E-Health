@@ -4,7 +4,7 @@ pandas
 opencv-python-headless
 numpy
 pytesseract
-tesseract-ocr==r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+tesseract-ocr
 pdf2image
 Pillow
 scikit-learn
