@@ -3,15 +3,13 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+#pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 import cv2
 import numpy as np 
 from PIL import Image
 from pdf2image import convert_from_bytes
 import pickle
 import base64
-
-poppler_path = r'C:\Program Files\poppler-xx\bin'
 
 patterns = {
         "Gender (0-M;1-F)": r"Gender.*?:\s*(0|1)",
