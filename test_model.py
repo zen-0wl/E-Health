@@ -11,6 +11,8 @@ from pdf2image import convert_from_bytes
 import pickle
 import base64
 
+poppler_path = r'C:\Program Files\poppler-xx\bin'
+
 patterns = {
         "Gender (0-M;1-F)": r"Gender.*?:\s*(0|1)",
         "Blood Pressure (systolic)": r"Blood Pressure\s+(\d+\.\d+|\d+)/(\d+\.\d+|\d+)",
