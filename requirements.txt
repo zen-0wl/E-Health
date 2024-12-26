@@ -2,7 +2,6 @@ streamlit
 pdfplumber
 pandas
 pytesseract
-tesseract-ocr
 opencv-python-headless
 numpy
 Pillow
