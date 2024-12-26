@@ -4,7 +4,6 @@ pandas
 opencv-python-headless
 numpy
 pytesseract
-tesseract-ocr
 pdf2image
 Pillow
 scikit-learn
