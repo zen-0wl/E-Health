@@ -4,6 +4,6 @@ pandas
 pytesseract
 opencv-python-headless
 numpy
-pillow==8.3.2 
+Pillow
 pdf2image==1.16.3
 scikit-learn
