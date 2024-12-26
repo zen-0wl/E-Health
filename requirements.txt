@@ -1,6 +1,8 @@
-streamlit 
+streamlit
 pdfplumber
-pandas 
+pandas
 pytesseract
-opencv-python
-libgl1
+opencv-python-headless
+numpy
+Pillow
+pdf2image
