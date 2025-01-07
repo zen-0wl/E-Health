@@ -203,8 +203,8 @@ if take_photo_button:
         """
         <style>
         .stCamera {
-            width: 300%;
-            height: 400vh;  /* Set height to 100% of viewport height */
+            width: 400%;
+            height: 800vh; 
         }
         </style>
         """, unsafe_allow_html=True)
@@ -218,6 +218,9 @@ if take_photo_button:
         image.save(buffer, format="PNG")  
         buffer.seek(0)
 
+        with open("captured_image.png", "wb") as f:
+            f.write(buffer.getvalue())
+            
         st.sidebar.image(buffer, caption="Captured Image", use_column_width=True)
 
         # Extract text using pytesseract
