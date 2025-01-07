@@ -198,7 +198,17 @@ else:
 take_photo_button = st.sidebar.button("Take Photo")
 
 if take_photo_button:
-    camera_input = st.sidebar.camera_input("Capture Image with Camera")
+    st.markdown(
+        """
+        <style>
+        .stCamera {
+            width: 100%;
+            height: 80vh;  /* Set height to 80% of viewport height */
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    camera_input = st.camera_input("Capture Image with Camera")
 
     if camera_input is not None:
         image = Image.open(camera_input)
