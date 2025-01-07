@@ -198,15 +198,60 @@ else:
 take_photo_button = st.sidebar.button("Take Photo")
 
 if take_photo_button:
-    st.markdown(
-        """
-        <style>
-        .stCamera {
-            width: 100%;
-            height: 80vh;  /* Set height to 80% of viewport height */
+    st.markdown("""
+    <script>
+    let videoElement = document.createElement('video');
+    let canvasElement = document.createElement('canvas');
+    let cameraStream;
+
+    // Access the camera
+    function startCamera(cameraType) {
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+            let deviceId = null;
+            for (let device of devices) {
+                if (device.kind === 'videoinput' && device.label.includes(cameraType)) {
+                    deviceId = device.deviceId;
+                }
+            }
+            if (deviceId) {
+                navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } })
+                    .then((stream) => {
+                        cameraStream = stream;
+                        videoElement.srcObject = stream;
+                        videoElement.play();
+                    }).catch((error) => {
+                        console.log("Error accessing camera: ", error);
+                    });
+            }
+        });
+    }
+
+    // Switch camera
+    function switchCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
         }
-        </style>
-        """, unsafe_allow_html=True)
+        if (videoElement.srcObject) {
+            videoElement.srcObject = null;
+        }
+        startCamera('back'); // Default to back camera
+    }
+
+    // Create a container to embed video
+    function createCameraView() {
+        const container = document.createElement('div');
+        container.appendChild(videoElement);
+        document.body.appendChild(container);
+        const switchButton = document.createElement('button');
+        switchButton.innerHTML = 'Switch Camera';
+        switchButton.onclick = switchCamera;
+        document.body.appendChild(switchButton);
+    }
+
+    // Call the function to initialize camera view
+    window.onload = createCameraView;
+    </script>
+""", unsafe_allow_html=True)
 
     camera_input = st.camera_input("Capture Image with Camera")
 
