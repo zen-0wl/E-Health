@@ -1,4 +1,5 @@
 import re
+import io
 import streamlit as st
 import pdfplumber
 import pandas as pd
@@ -212,8 +213,14 @@ if take_photo_button:
 
     if camera_input is not None:
         image = Image.open(camera_input)
-        st.sidebar.image(image, caption="Captured Image", use_column_width=True)
 
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")  
+        buffer.seek(0)
+
+        st.sidebar.image(buffer, caption="Captured Image", use_column_width=True)
+
+        # Extract text using pytesseract
         extracted_text = pytesseract.image_to_string(image)
         st.subheader("Extracted Text from Camera Image:")
         st.text_area("Extracted Text", extracted_text, height=300)
@@ -237,6 +244,5 @@ if take_photo_button:
             predicted_disease = disease_labels[prediction[0]]
             st.subheader("Model Prediction Result:")
             st.write(f"**Predicted Disease:** {predicted_disease}")
-
 else:
     st.sidebar.info("Click the button to open the camera.")
