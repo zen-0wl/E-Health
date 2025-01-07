@@ -1,4 +1,5 @@
 streamlit
+streamlit_webrtc
 pdfplumber
 pandas
 opencv-python-headless

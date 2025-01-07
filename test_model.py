@@ -1,6 +1,5 @@
 import re
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 import pdfplumber
 import pandas as pd
 import pytesseract
