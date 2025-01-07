@@ -202,8 +202,8 @@ if take_photo_button:
         """
         <style>
         .stCamera {
-            width: 100%;
-            height: 100vh;  /* Set height to 100% of viewport height */
+            width: 300%;
+            height: 400vh;  /* Set height to 100% of viewport height */
         }
         </style>
         """, unsafe_allow_html=True)
