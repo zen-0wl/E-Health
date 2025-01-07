@@ -193,35 +193,41 @@ if uploaded_file is not None:
         st.write(f"**Predicted Disease:** {predicted_disease}")
 else:
     st.sidebar.info("Please upload a PDF file to get started.")
-    
-camera_input = st.sidebar.camera_input("Capture Image with Camera")
 
-if camera_input is not None:
-    image = Image.open(camera_input)
-    st.sidebar.image(image, caption="Captured Image", use_column_width=True)
+## Camera option 
+take_photo_button = st.sidebar.button("Take Photo")
 
-    # Use pytesseract to extract text from the captured image
-    extracted_text = pytesseract.image_to_string(image)
-    st.subheader("Extracted Text from Camera Image:")
-    st.text_area("Extracted Text", extracted_text, height=300)
+if take_photo_button:
+    camera_input = st.sidebar.camera_input("Capture Image with Camera")
 
-    # Parsing and model prediction (similar to the uploaded file)
-    parsed_data = parse_extracted_text(extracted_text)
-    parsed_df = pd.DataFrame(list(parsed_data.items()), columns=["Disease", "Result"])
-    parsed_df.index = [''] * len(parsed_df)  # removes the side numberings
+    if camera_input is not None:
+        image = Image.open(camera_input)
+        st.sidebar.image(image, caption="Captured Image", use_column_width=True)
 
-    st.subheader("Parsed Data:")
-    st.dataframe(parsed_df)
+        # Use pytesseract to extract text from the captured image
+        extracted_text = pytesseract.image_to_string(image)
+        st.subheader("Extracted Text from Camera Image:")
+        st.text_area("Extracted Text", extracted_text, height=300)
 
-    input_data = prepare_input(parsed_data)
+        # Parsing and model prediction (similar to the uploaded file)
+        parsed_data = parse_extracted_text(extracted_text)
+        parsed_df = pd.DataFrame(list(parsed_data.items()), columns=["Disease", "Result"])
+        parsed_df.index = [''] * len(parsed_df)  # Removes the side numberings
 
-    with open("random_forest_model.pkl", "rb") as f:
-        best_model = pickle.load(f)
+        st.subheader("Parsed Data:")
+        st.dataframe(parsed_df)
 
-    if input_data.isnull().all().all():
-        st.write("**Prediction cannot be made due to missing data.**")
-    else:
-        prediction = best_model.predict(input_data)
-        predicted_disease = disease_labels[prediction[0]]
-        st.subheader("Model Prediction Result:")
-        st.write(f"**Predicted Disease:** {predicted_disease}")
+        input_data = prepare_input(parsed_data)
+
+        with open("random_forest_model.pkl", "rb") as f:
+            best_model = pickle.load(f)
+
+        if input_data.isnull().all().all():
+            st.write("**Prediction cannot be made due to missing data.**")
+        else:
+            prediction = best_model.predict(input_data)
+            predicted_disease = disease_labels[prediction[0]]
+            st.subheader("Model Prediction Result:")
+            st.write(f"**Predicted Disease:** {predicted_disease}")
+else:
+    st.sidebar.info("Click the button to open the camera.")
