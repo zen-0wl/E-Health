@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image
 from pdf2image import convert_from_bytes
 import pickle
+from io import BytesIO
 import base64
 
 patterns = {
@@ -195,78 +196,64 @@ else:
     st.sidebar.info("Please upload a PDF file to get started.")
 
 ## Camera option 
+def display_camera():
+    # Inject custom HTML and JS for the camera interface
+    st.markdown("""
+    <script>
+    function startCamera() {
+        const video = document.createElement('video');
+        video.setAttribute('autoplay', true);
+        video.setAttribute('width', 640);
+        video.setAttribute('height', 480);
+        
+        // Access the phone's back camera (external camera)
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+            video.srcObject = stream;
+            document.getElementById('camera-container').appendChild(video);
+        });
+    }
+    
+    function captureImage() {
+        const video = document.querySelector('video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        // Convert canvas to base64 (PNG format)
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Send the base64 image to Streamlit
+        const data = { image: dataUrl };
+        window.parent.postMessage(data, "*");
+    }
+    </script>
+    <div id="camera-container"></div>
+    <button onclick="startCamera()">Start Camera</button>
+    <button onclick="captureImage()">Capture Image</button>
+    """, unsafe_allow_html=True)
+
+# Camera button to trigger the process
 take_photo_button = st.sidebar.button("Take Photo")
 
 if take_photo_button:
-    # Inject custom HTML and JS for the camera
-    st.markdown("""
-    <script>
-    let videoElement = document.createElement('video');
-    let canvasElement = document.createElement('canvas');
-    let cameraStream;
-    
-    // Access the camera
-    function startCamera(cameraType) {
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-            let deviceId = null;
-            for (let device of devices) {
-                if (device.kind === 'videoinput' && device.label.includes(cameraType)) {
-                    deviceId = device.deviceId;
-                }
-            }
-            if (deviceId) {
-                navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } })
-                    .then((stream) => {
-                        cameraStream = stream;
-                        videoElement.srcObject = stream;
-                        videoElement.play();
-                    }).catch((error) => {
-                        console.log("Error accessing camera: ", error);
-                    });
-            }
-        });
-    }
+    # Display the camera interface
+    display_camera()
 
-    // Switch camera (back/front)
-    function switchCamera() {
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-        }
-        if (videoElement.srcObject) {
-            videoElement.srcObject = null;
-        }
-        startCamera('back'); // Default to back camera (switch based on your need)
-    }
+    # Now listen for the captured image data
+    message = st.query_params
 
-    // Create a container for the video element
-    function createCameraView() {
-        const container = document.createElement('div');
-        container.appendChild(videoElement);
-        document.body.appendChild(container);
-        const switchButton = document.createElement('button');
-        switchButton.innerHTML = 'Switch Camera';
-        switchButton.onclick = switchCamera;
-        document.body.appendChild(switchButton);
-    }
-
-    // Call function to initialize camera
-    window.onload = createCameraView;
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Capture image when the camera input is displayed
-    st.markdown("Capture the image with the camera above.")
-
-    # Use streamlit camera input
-    camera_input = st.camera_input("Capture Image with Camera")
-
-    if camera_input is not None:
-        # Process the captured image
-        image = Image.open(camera_input)
-        st.sidebar.image(image, caption="Captured Image", use_column_width=True)
+    if message and 'image' in message:
+        img_str = message['image'][0]
+        img_data = img_str.split(',')[1]
+        img = Image.open(BytesIO(base64.b64decode(img_data)))
+        
+        # Display the captured image
+        st.sidebar.image(img, caption="Captured Image", use_column_width=True)
 
         # Use pytesseract to extract text from the captured image
-        extracted_text = pytesseract.image_to_string(image)
+        extracted_text = pytesseract.image_to_string(img)
         st.subheader("Extracted Text from Camera Image:")
         st.text_area("Extracted Text", extracted_text, height=300)
 
