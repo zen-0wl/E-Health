@@ -198,12 +198,13 @@ else:
 take_photo_button = st.sidebar.button("Take Photo")
 
 if take_photo_button:
+    # Inject custom HTML and JS for the camera
     st.markdown("""
     <script>
     let videoElement = document.createElement('video');
     let canvasElement = document.createElement('canvas');
     let cameraStream;
-
+    
     // Access the camera
     function startCamera(cameraType) {
         navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -226,7 +227,7 @@ if take_photo_button:
         });
     }
 
-    // Switch camera
+    // Switch camera (back/front)
     function switchCamera() {
         if (cameraStream) {
             cameraStream.getTracks().forEach(track => track.stop());
@@ -234,10 +235,10 @@ if take_photo_button:
         if (videoElement.srcObject) {
             videoElement.srcObject = null;
         }
-        startCamera('back'); // Default to back camera
+        startCamera('back'); // Default to back camera (switch based on your need)
     }
 
-    // Create a container to embed video
+    // Create a container for the video element
     function createCameraView() {
         const container = document.createElement('div');
         container.appendChild(videoElement);
@@ -248,14 +249,19 @@ if take_photo_button:
         document.body.appendChild(switchButton);
     }
 
-    // Call the function to initialize camera view
+    // Call function to initialize camera
     window.onload = createCameraView;
     </script>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
+    # Capture image when the camera input is displayed
+    st.markdown("Capture the image with the camera above.")
+
+    # Use streamlit camera input
     camera_input = st.camera_input("Capture Image with Camera")
 
     if camera_input is not None:
+        # Process the captured image
         image = Image.open(camera_input)
         st.sidebar.image(image, caption="Captured Image", use_column_width=True)
 
