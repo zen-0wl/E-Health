@@ -214,15 +214,13 @@ if take_photo_button:
         image = Image.open(camera_input)
         st.sidebar.image(image, caption="Captured Image", use_column_width=True)
 
-        # Use pytesseract to extract text from the captured image
         extracted_text = pytesseract.image_to_string(image)
         st.subheader("Extracted Text from Camera Image:")
         st.text_area("Extracted Text", extracted_text, height=300)
 
-        # Parsing and model prediction (similar to the uploaded file)
         parsed_data = parse_extracted_text(extracted_text)
         parsed_df = pd.DataFrame(list(parsed_data.items()), columns=["Disease", "Result"])
-        parsed_df.index = [''] * len(parsed_df)  # Removes the side numberings
+        parsed_df.index = [''] * len(parsed_df)  
 
         st.subheader("Parsed Data:")
         st.dataframe(parsed_df)
@@ -239,5 +237,6 @@ if take_photo_button:
             predicted_disease = disease_labels[prediction[0]]
             st.subheader("Model Prediction Result:")
             st.write(f"**Predicted Disease:** {predicted_disease}")
+
 else:
     st.sidebar.info("Click the button to open the camera.")
